@@ -6,12 +6,14 @@
 # Generated columns, json, indexes and columns aggregation
 # How to call lambda, debugging
 
+from sqlalchemy.dialects.mysql import JSON
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, create_engine, Boolean, select, insert
+from sqlalchemy import Column, Integer, String, create_engine, Boolean, select, insert, Computed
 
 import pymysql
 
 # from sqlalchemy_utils import create_view
+from sqlalchemy_json import MutableJson
 
 pymysql.install_as_MySQLdb()
 
@@ -28,8 +30,13 @@ class User(Base):
     premium_user = Column(Boolean, default=False)
 
 
-# defining view
-premium_members = select([User]).where(User.premium_user == True)
+class Department(Base):
+    __tablename__ = "departments"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(60))
+    attributes = Column(JSON)
+    employeesCount = Column(Integer, Computed("`attributes` ->> '$.employeesCount'"), index=True)
+
 
 # defining stored procedure
 # maybe to replace it with sa objects
@@ -39,6 +46,15 @@ insert_user = """
     END;
 """
 
+# insert to Department table
+# insert(Department).values([None, "sales", {"employeesCount": 10}]).execute()
+
+
+# defining view
+premium_members = select([User]).where(User.premium_user == True)
+
 # create_view('premium_users', premium_members, metadata)
 
 # metadata.create_all()
+
+# print(Column(Integer, Computed("id" * 2)))
